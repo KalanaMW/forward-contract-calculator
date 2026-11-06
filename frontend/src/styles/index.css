@@ -555,6 +555,95 @@ a {
   margin-top: 2px;
 }
 
+/* Error State for Input Containers */
+.input-container.has-error {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.4);
+}
+
+.input-container.has-error:hover {
+  border-color: #fb7185;
+}
+
+.input-container.has-error:focus-within {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.25);
+}
+
+.input-container.has-error .input-affix {
+  color: #fb7185;
+}
+
+/* Field-specific Validation Error Message */
+.form-field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fb7185;
+  margin-top: 4px;
+  line-height: 1.4;
+  animation: fadeInDown 200ms ease;
+}
+
+.form-field-error svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Validation Status Banners */
+.validation-summary-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin-top: var(--space-3);
+  animation: fadeInDown 200ms ease;
+}
+
+.validation-summary-banner.error {
+  background-color: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fda4af;
+}
+
+.validation-summary-banner.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+.validation-summary-banner svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* --------------------------------------------------------------------------
    9. Buttons & Actions
    -------------------------------------------------------------------------- */

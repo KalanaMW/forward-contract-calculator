@@ -7,6 +7,7 @@ import { TheorySection } from '../components/TheorySection';
 import { AcademicInfo } from '../components/AcademicInfo';
 import { apiService, HealthResponse } from '../services/apiService';
 import { ContractParameters, PayoffResult, CalculationHistoryItem } from '../types/payoff';
+import { ValidatedContractParams } from '../utils/validation';
 import { getOutcomeType } from '../utils/formatters';
 
 // Development-only demonstration presets to test all UI states (Profit, Loss, Break-Even, Empty)
@@ -106,12 +107,10 @@ export const CalculatorPage: React.FC = () => {
     setActiveScenarioKey('empty');
   };
 
-  // Form calculate preview handler
-  const handleCalculate = (params: ContractParameters) => {
-    // In Issue #2, provides typed props to dashboard/chart without saving to actual history
-    const result = createPayoffResult(params);
-    setActiveResult(result);
-    setActiveScenarioKey('custom');
+  // Form calculate handler: receives validated, typed input object for future API integration
+  const handleCalculate = (_params: ValidatedContractParams) => {
+    // Issue #3: Input validation complete. Payoffs are not calculated in React.
+    // The typed ValidatedContractParams object is prepared for backend API integration in Issue #4.
   };
 
   // Development scenario selector - strictly for UI verification, never saved to history
@@ -142,7 +141,7 @@ export const CalculatorPage: React.FC = () => {
         {/* Hero Introduction Banner */}
         <section className="hero-section" aria-labelledby="hero-title">
           <div className="hero-pill">
-            <span>Financial Derivative Pricing &bull; Issue #2 Results Dashboard</span>
+            <span>Financial Derivative Pricing &bull; Issue #3 Input Validation</span>
           </div>
           <h1 id="hero-title" className="hero-title">
             Forward Contract <span className="gradient-text">Profit/Loss Calculator</span>
