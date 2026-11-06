@@ -123,17 +123,27 @@ forward-contract-calculator/
 ├── .gitignore                          # macOS, Node, and .NET ignore rules
 ├── README.md                           # Project & onboarding documentation
 │
-├── backend/                            # ASP.NET Core Web API Project
-│   └── ForwardContract.Api/
-│       ├── Controllers/                # API Controllers
-│       │   └── HealthController.cs     # GET /api/health endpoint
-│       ├── Models/                     # Request/Response DTO models
-│       ├── Services/                   # Financial engineering domain services
-│       ├── Properties/
-│       │   └── launchSettings.json     # Kestrel port configuration (5050)
-│       ├── appsettings.json            # Application configuration
-│       ├── Program.cs                  # Web API host configuration & CORS
-│       └── ForwardContract.Api.csproj  # Target framework: net6.0
+├── backend/                            # ASP.NET Core Web API & Test Solution
+│   ├── ForwardContract.sln             # Visual Studio / .NET Solution
+│   ├── ForwardContract.Api/            # Main Web API Project
+│   │   ├── Controllers/                # API Controllers
+│   │   │   ├── HealthController.cs     # GET /api/health endpoint
+│   │   │   └── ForwardController.cs    # POST /api/forward/calculate endpoint
+│   │   ├── Models/                     # Request/Response DTO models
+│   │   │   ├── ForwardCalculationRequest.cs
+│   │   │   └── ForwardCalculationResponse.cs
+│   │   ├── Services/                   # Financial engineering domain services
+│   │   │   ├── IForwardCalculationService.cs
+│   │   │   └── ForwardCalculationService.cs
+│   │   ├── Properties/
+│   │   │   └── launchSettings.json     # Kestrel port configuration (5050)
+│   │   ├── appsettings.json            # Application configuration
+│   │   ├── Program.cs                  # Web API host configuration & CORS
+│   │   └── ForwardContract.Api.csproj  # Target framework: net6.0
+│   └── ForwardContract.Tests/          # Backend Unit Test Project (xUnit)
+│       ├── ForwardCalculationServiceTests.cs # Financial arithmetic & boundary tests
+│       ├── ForwardControllerTests.cs   # HTTP response & validation tests
+│       └── ForwardContract.Tests.csproj # xUnit net6.0 test project
 │
 └── frontend/                           # React 16 + TypeScript + Vite SPA
     ├── index.html                      # HTML5 entry template
@@ -166,10 +176,10 @@ Each of the 5 group members is assigned a dedicated Git feature branch and issue
 | Member / Role | Git Branch | Assignment / Focus Area | Status |
 | :--- | :--- | :--- | :--- |
 | **Member 1**<br/>(UI/UX & Core Setup) | `feature/ui-input-form` | **Issue #1**: Full-Stack Architecture Setup & Calculator Input Form UI.<br/>• Scaffold React 16 + ASP.NET Core 6 layered architecture.<br/>• Input fields for $K$, $S$, and $Q$ with LKR denomination.<br/>• Form reset & action buttons, finance theory section. | ✅ **Completed** |
-| **Member 2**<br/>(UI/UX & Visualization) | `feature/ui-results-dashboard` | **Issue #2**: Results Dashboard & Interactive Visuals.<br/>• Payoff summary dashboard cards (Buyer Gain/Loss, Seller Gain/Loss).<br/>• Tabular payoff distribution scenario matrix.<br/>• Responsive visual layout for results presentation. | ⏳ **Planned** |
-| **Member 3**<br/>(Development & Validation) | `feature/input-validation` | **Issue #3**: Input Handling & Validation Pipeline.<br/>• Client-side validation: non-empty, numeric format, positive range ($Q > 0, K \ge 0, S \ge 0$).<br/>• Server-side ASP.NET Core validation attributes and error handling.<br/>• Accessible error feedback banners in UI. | ⏳ **Planned** |
-| **Member 4**<br/>(Development & Backend) | `feature/payoff-calculations` | **Issue #4**: Backend Financial Calculation Engine.<br/>• `IPayoffCalculationService` implementation in C#.<br/>• Buyer and seller payoff calculations: $(S - K) \times Q$ and $(K - S) \times Q$.<br/>• `PayoffController` REST endpoint: `POST /api/payoffs/calculate`.<br/>• Client `localStorage` integration for calculation history. | ⏳ **Planned** |
-| **Member 5**<br/>(Development & Deployment) | `feature/charts-testing-deployment` | **Issue #5**: Chart Integration, Testing & Deployment.<br/>• Interactive payoff line chart (Chart.js) showing buyer and seller curves.<br/>• Break-even point visualization.<br/>• Integration and unit testing, final build verification and deployment. | ⏳ **Planned** |
+| **Member 2**<br/>(UI/UX & Visualization) | `feature/ui-results-dashboard` | **Issue #2**: Results Dashboard & Interactive Visuals.<br/>• Payoff summary dashboard cards (Buyer Gain/Loss, Seller Gain/Loss).<br/>• Tabular payoff distribution scenario matrix.<br/>• Responsive visual layout for results presentation. | ✅ **Completed** |
+| **Member 3**<br/>(Development & Validation) | `feature/input-validation` | **Issue #3**: Input Handling & Validation Pipeline.<br/>• Client-side validation: non-empty, numeric format, positive range ($Q > 0, K \ge 0, S \ge 0$).<br/>• Reusable TypeScript validation utilities and real-time field error banners. | ✅ **Completed** |
+| **Member 4**<br/>(Development & Backend) | `feature/payoff-calculations` | **Issue #4**: Backend Financial Calculation Engine & Unit Tests.<br/>• `IForwardCalculationService` & `ForwardCalculationService` implementation in C#.<br/>• Buyer and seller payoff calculations: $(S - K) \times Q$ and $(K - S) \times Q$.<br/>• `ForwardController` REST endpoint: `POST /api/forward/calculate`.<br/>• Comprehensive xUnit test suite (22 unit tests) with overflow and boundary validations. | ✅ **Completed** |
+| **Member 5**<br/>(Development & Integration) | `feature/charts-testing-deployment` | **Issue #5**: Full-Stack API Integration, LocalStorage & Deployment.<br/>• Connect React frontend to backend `POST /api/forward/calculate`.<br/>• Interactive payoff line chart (Chart.js) showing live buyer and seller curves.<br/>• Browser LocalStorage history persistence and final deployment verification. | ⏳ **Planned** |
 
 ---
 
@@ -256,14 +266,24 @@ npm run dev
   ➜  Local:   http://127.0.0.1:5173/
   ```
 
+### Terminal 3: Run Backend Unit Tests
+```bash
+dotnet test backend/ForwardContract.sln
+```
+- **Terminal Output Confirmation**:
+  ```text
+  Test run for .../ForwardContract.Tests.dll (.NETCoreApp,Version=v6.0)
+  Passed!  - Failed: 0, Passed: 22, Skipped: 0, Total: 22 - ForwardContract.Tests.dll (net6.0)
+  ```
+
 ### Production Build Validation
 To verify that both projects compile without warnings or errors before pushing code:
 ```bash
 # Validate frontend TypeScript compilation & bundling
 cd frontend && npm run build
 
-# Validate backend C# compilation
-cd ../backend/ForwardContract.Api && dotnet build --configuration Release
+# Validate backend C# compilation and tests
+cd ../backend && dotnet build ForwardContract.sln && dotnet test ForwardContract.sln
 ```
 
 ---
@@ -278,6 +298,62 @@ cd ../backend/ForwardContract.Api && dotnet build --configuration Release
 | **Backend API Base** | HTTP | `http://localhost:5050` | ASP.NET Core Web API Root |
 | **Backend Health Check** | HTTP (GET) | `http://localhost:5050/api/health` | Controller Health Endpoint (JSON status) |
 | **Direct Health Probe** | HTTP (GET) | `http://localhost:5050/health` | Minimal Health Endpoint |
+| **Payoff Calculation** | HTTP (POST) | `http://localhost:5050/api/forward/calculate` | Forward Contract Payoff Calculation Engine |
+
+### API Contract: Forward Payoff Calculation
+
+#### Request: `POST /api/forward/calculate`
+- **Headers**: `Content-Type: application/json`
+- **Body Schema**:
+  ```json
+  {
+    "agreedPrice": 210,
+    "marketPrice": 240,
+    "quantity": 100
+  }
+  ```
+  | Field | Type | Required | Validation Rule | Description |
+  | :--- | :--- | :--- | :--- | :--- |
+  | `agreedPrice` | `decimal` | Yes | $\ge 0$ | Agreed Forward Price ($K$) locked at inception |
+  | `marketPrice` | `decimal` | Yes | $\ge 0$ | Market Spot Price ($S$) at contract maturity |
+  | `quantity` | `decimal` | Yes | $> 0$ | Number of underlying units transacted ($Q$) |
+
+#### Success Response: `HTTP 200 OK`
+- **Body Schema**:
+  ```json
+  {
+    "buyerPayoff": 3000,
+    "sellerPayoff": -3000
+  }
+  ```
+- **Formulas Evaluated**:
+  - Buyer Payoff $= (S - K) \times Q = (240 - 210) \times 100 = 3000$
+  - Seller Payoff $= (K - S) \times Q = (210 - 240) \times 100 = -3000$
+  - Net Balance Property $= \text{Buyer Payoff} + \text{Seller Payoff} = 0$ (Zero-sum derivative)
+
+#### Error Responses: `HTTP 400 Bad Request`
+The API validates inputs and returns meaningful 400 Bad Request responses (avoiding unhandled 500 server errors):
+- **Negative Agreed Price ($K < 0$)**:
+  ```json
+  {
+    "errors": {
+      "AgreedPrice": ["Agreed forward price (K) cannot be negative."]
+    }
+  }
+  ```
+- **Zero or Negative Quantity ($Q \le 0$)**:
+  ```json
+  {
+    "error": "Validation failed.",
+    "details": ["Contract quantity (Q) must be greater than zero."]
+  }
+  ```
+- **Arithmetic Overflow**:
+  ```json
+  {
+    "error": "The calculation resulted in an arithmetic overflow. Please provide smaller values."
+  }
+  ```
 
 ### Environment Configuration Notes
 - **Port 5050 Selection**: The backend is deliberately configured to run on port `5050` in `Properties/launchSettings.json`. On macOS, port `5000` is reserved by default for the OS **AirPlay Receiver**, which causes port binding conflicts.

@@ -1,4 +1,9 @@
+using ForwardContract.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Register domain services
+builder.Services.AddScoped<IForwardCalculationService, ForwardCalculationService>();
 
 // Add controller support
 builder.Services.AddControllers();
