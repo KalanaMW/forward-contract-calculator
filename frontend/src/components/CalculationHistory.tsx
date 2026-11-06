@@ -13,6 +13,12 @@ export const CalculationHistory: React.FC<CalculationHistoryProps> = ({
   onClearHistory,
   onSelectHistoryItem,
 }) => {
+  const handleClearWithConfirmation = () => {
+    if (window.confirm('Are you sure you want to clear your saved calculation history?')) {
+      onClearHistory();
+    }
+  };
+
   return (
     <section className="card history-card" id="history" aria-labelledby="history-heading">
       {/* History Header */}
@@ -38,7 +44,7 @@ export const CalculationHistory: React.FC<CalculationHistoryProps> = ({
               <button
                 type="button"
                 className="btn btn-clear-history"
-                onClick={onClearHistory}
+                onClick={handleClearWithConfirmation}
                 aria-label="Clear calculation history"
               >
                 <svg viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" aria-hidden="true">

@@ -15,7 +15,7 @@ export const AcademicInfo: React.FC = () => {
         </div>
         <div className="academic-item">
           <span className="academic-label">Assignment Task</span>
-          <span className="academic-value">Issue #1: Full-Stack React + .NET Setup</span>
+          <span className="academic-value">Forward Contract Settlement Engine</span>
         </div>
         <div className="academic-item">
           <span className="academic-label">Settlement Standard</span>

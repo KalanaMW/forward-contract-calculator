@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   validateAgreedPrice,
   validateMarketPrice,
@@ -19,9 +19,18 @@ const DEFAULT_STATE: RawContractFormData = {
 export interface CalculatorFormProps {
   onCalculate?: (params: ValidatedContractParams) => void;
   onReset?: () => void;
+  isLoading?: boolean;
+  apiError?: string | null;
+  loadedParams?: ValidatedContractParams | null;
 }
 
-export const CalculatorForm: React.FC<CalculatorFormProps> = ({ onCalculate, onReset }) => {
+export const CalculatorForm: React.FC<CalculatorFormProps> = ({
+  onCalculate,
+  onReset,
+  isLoading,
+  apiError,
+  loadedParams,
+}) => {
   const [formData, setFormData] = useState<RawContractFormData>(DEFAULT_STATE);
   const [errors, setErrors] = useState<FormValidationErrors>({});
   const [touched, setTouched] = useState<Record<keyof RawContractFormData, boolean>>({
@@ -37,6 +46,20 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({ onCalculate, onR
   const agreedPriceRef = useRef<HTMLInputElement | null>(null);
   const marketPriceRef = useRef<HTMLInputElement | null>(null);
   const quantityRef = useRef<HTMLInputElement | null>(null);
+
+  // Synchronize form inputs when historical parameters are loaded
+  useEffect(() => {
+    if (loadedParams) {
+      setFormData({
+        agreedPrice: String(loadedParams.agreedPrice),
+        marketPrice: String(loadedParams.marketPrice),
+        quantity: String(loadedParams.quantity),
+      });
+      setErrors({});
+      setFormSummaryError(null);
+      setValidatedParams(loadedParams);
+    }
+  }, [loadedParams]);
 
   /**
    * Validate a single field by key and update the error state
@@ -373,15 +396,29 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({ onCalculate, onR
           </div>
         )}
 
+        {/* API Error Warning */}
+        {apiError && !formSummaryError && (
+          <div className="validation-summary-banner error" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <div>
+              <strong>API Error:</strong> {apiError}
+            </div>
+          </div>
+        )}
+
         {/* Validated Parameters Notification */}
-        {validatedParams && !formSummaryError && (
+        {validatedParams && !formSummaryError && !apiError && (
           <div className="validation-summary-banner success" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <div>
-              <strong>Input Validation Successful:</strong> Parameters verified (K = {formatCurrency(validatedParams.agreedPrice)}, S = {formatCurrency(validatedParams.marketPrice)}, Q = {formatNumber(validatedParams.quantity)} Units). Typed payload prepared for backend calculation engine.
+              <strong>Parameters Verified:</strong> Forward Delivery Price K = {formatCurrency(validatedParams.agreedPrice)}, Maturity Spot Price S = {formatCurrency(validatedParams.marketPrice)}, Quantity Q = {formatNumber(validatedParams.quantity)} Units.
             </div>
           </div>
         )}
@@ -392,20 +429,20 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({ onCalculate, onR
             type="submit"
             id="calculateBtn"
             className="btn btn-primary"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
+            disabled={isSubmitting || !!isLoading}
+            aria-busy={isSubmitting || !!isLoading}
           >
             <svg viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12h14" />
               <path d="m12 5 7 7-7 7" />
             </svg>
-            <span>{isSubmitting ? 'Validating...' : 'Calculate Payoffs'}</span>
+            <span>{isLoading ? 'Calculating with API...' : isSubmitting ? 'Validating...' : 'Calculate Payoffs'}</span>
           </button>
           <button
             type="reset"
             id="resetBtn"
             className="btn btn-secondary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!isLoading}
           >
             <svg viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />

@@ -5,12 +5,13 @@ import { PayoffChart } from '../components/PayoffChart';
 import { CalculationHistory } from '../components/CalculationHistory';
 import { TheorySection } from '../components/TheorySection';
 import { AcademicInfo } from '../components/AcademicInfo';
-import { apiService, HealthResponse } from '../services/apiService';
+import { apiService, HealthResponse, getApiBaseUrl } from '../services/apiService';
+import { historyStorage } from '../services/historyStorage';
 import { ContractParameters, PayoffResult, CalculationHistoryItem } from '../types/payoff';
 import { ValidatedContractParams } from '../utils/validation';
 import { getOutcomeType } from '../utils/formatters';
 
-// Development-only demonstration presets to test all UI states (Profit, Loss, Break-Even, Empty)
+// Development-only demonstration presets to test UI states in isolation without touching history
 const DEV_SCENARIOS: Record<string, { label: string; params: ContractParameters | null; desc: string }> = {
   empty: {
     label: 'Empty State (Default)',
@@ -34,105 +35,172 @@ const DEV_SCENARIOS: Record<string, { label: string; params: ContractParameters 
   },
 };
 
-const DEV_SAMPLE_HISTORY: CalculationHistoryItem[] = [
-  {
-    id: 'demo-1',
-    timestamp: 'Today, 10:15 AM',
-    parameters: { agreedPrice: 210, marketPrice: 240, quantity: 100 },
-    buyerPayoff: 3000,
-    sellerPayoff: -3000,
-    buyerOutcome: 'profit',
-    sellerOutcome: 'loss',
-  },
-  {
-    id: 'demo-2',
-    timestamp: 'Today, 09:40 AM',
-    parameters: { agreedPrice: 210, marketPrice: 195, quantity: 100 },
-    buyerPayoff: -1500,
-    sellerPayoff: 1500,
-    buyerOutcome: 'loss',
-    sellerOutcome: 'profit',
-  },
-  {
-    id: 'demo-3',
-    timestamp: 'Yesterday, 04:20 PM',
-    parameters: { agreedPrice: 200, marketPrice: 200, quantity: 150 },
-    buyerPayoff: 0,
-    sellerPayoff: 0,
-    buyerOutcome: 'breakeven',
-    sellerOutcome: 'breakeven',
-  },
-];
-
 export const CalculatorPage: React.FC = () => {
+  // Live API Connection State
   const [apiHealth, setApiHealth] = useState<HealthResponse | null>(null);
+  const [isApiOnline, setIsApiOnline] = useState<boolean | null>(null);
 
-  // Active calculation result & history state (initially null/empty to preserve empty states)
+  // Active Calculation Result State
   const [activeResult, setActiveResult] = useState<PayoffResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [loadedParams, setLoadedParams] = useState<ValidatedContractParams | null>(null);
+
+  // Calculation History State (persisted via LocalStorage)
   const [history, setHistory] = useState<CalculationHistoryItem[]>([]);
   const [activeScenarioKey, setActiveScenarioKey] = useState<string>('empty');
 
+  // Load calculation history from LocalStorage and probe API health upon initial mount
   useEffect(() => {
-    // Attempt health check on initial load (optional graceful degraded status)
-    apiService
-      .checkHealth()
-      .then((data) => setApiHealth(data))
-      .catch(() => {
-        // Backend not yet running or still starting
-      });
+    // 1. Load persisted history
+    const savedHistory = historyStorage.loadHistory();
+    setHistory(savedHistory);
+
+    // 2. Probe backend health status
+    probeApiHealth();
   }, []);
 
-  // Compute a typed PayoffResult structure for display (strictly decoupled from history persistence)
-  const createPayoffResult = (params: ContractParameters): PayoffResult => {
-    const unitBuyer = params.marketPrice - params.agreedPrice;
-    const unitSeller = params.agreedPrice - params.marketPrice;
-    const buyerPayoff = unitBuyer * params.quantity;
-    const sellerPayoff = unitSeller * params.quantity;
-
-    return {
-      parameters: params,
-      buyerPayoff,
-      sellerPayoff,
-      buyerOutcome: getOutcomeType(buyerPayoff),
-      sellerOutcome: getOutcomeType(sellerPayoff),
-      unitPayoffBuyer: unitBuyer,
-      unitPayoffSeller: unitSeller,
-      calculatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+  const probeApiHealth = async () => {
+    try {
+      const data = await apiService.checkHealth();
+      setApiHealth(data);
+      setIsApiOnline(true);
+    } catch {
+      setApiHealth(null);
+      setIsApiOnline(false);
+    }
   };
 
-  // Form reset handler
+  /**
+   * Primary Calculate Action:
+   * Calls the authoritative ASP.NET Core Web API (POST /api/forward/calculate).
+   * Backend arithmetic determines the payoffs; results are saved to LocalStorage.
+   */
+  const handleCalculate = async (params: ValidatedContractParams) => {
+    setIsLoading(true);
+    setApiError(null);
+
+    try {
+      // Execute backend API request
+      const response = await apiService.calculatePayoff(params);
+
+      // Successfully connected; ensure online status reflects
+      setIsApiOnline(true);
+
+      const unitBuyer = params.marketPrice - params.agreedPrice;
+      const unitSeller = params.agreedPrice - params.marketPrice;
+
+      const payoffResult: PayoffResult = {
+        parameters: params,
+        buyerPayoff: response.buyerPayoff,
+        sellerPayoff: response.sellerPayoff,
+        buyerOutcome: getOutcomeType(response.buyerPayoff),
+        sellerOutcome: getOutcomeType(response.sellerPayoff),
+        unitPayoffBuyer: unitBuyer,
+        unitPayoffSeller: unitSeller,
+        calculatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      // Set authoritative results
+      setActiveResult(payoffResult);
+      setActiveScenarioKey('');
+
+      // Persist to LocalStorage and update history state (newest first)
+      const updatedHistory = historyStorage.saveCalculation(
+        params,
+        response.buyerPayoff,
+        response.sellerPayoff
+      );
+      setHistory(updatedHistory);
+    } catch (err: any) {
+      // Clear result: never show fabricated or stale results when API requests fail
+      setActiveResult(null);
+
+      const errorMsg = err?.message || 'An unexpected error occurred while communicating with the backend API.';
+      setApiError(errorMsg);
+
+      if (errorMsg.includes('Unable to connect')) {
+        setIsApiOnline(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Reset Handler:
+   * Clears the current active result and input form without deleting saved history.
+   */
   const handleReset = () => {
     setActiveResult(null);
+    setApiError(null);
+    setLoadedParams(null);
     setActiveScenarioKey('empty');
   };
 
-  // Form calculate handler: receives validated, typed input object for future API integration
-  const handleCalculate = (_params: ValidatedContractParams) => {
-    // Issue #3: Input validation complete. Payoffs are not calculated in React.
-    // The typed ValidatedContractParams object is prepared for backend API integration in Issue #4.
+  /**
+   * History Record Selection:
+   * Loads parameters and previously calculated payoffs into the dashboard.
+   * Does NOT duplicate history records upon viewing.
+   */
+  const handleSelectHistoryItem = (item: CalculationHistoryItem) => {
+    const unitBuyer = item.parameters.marketPrice - item.parameters.agreedPrice;
+    const unitSeller = item.parameters.agreedPrice - item.parameters.marketPrice;
+
+    const restoredResult: PayoffResult = {
+      parameters: item.parameters,
+      buyerPayoff: item.buyerPayoff,
+      sellerPayoff: item.sellerPayoff,
+      buyerOutcome: item.buyerOutcome,
+      sellerOutcome: item.sellerOutcome,
+      unitPayoffBuyer: unitBuyer,
+      unitPayoffSeller: unitSeller,
+      calculatedAt: item.timestamp,
+    };
+
+    setActiveResult(restoredResult);
+    setLoadedParams({ ...item.parameters });
+    setApiError(null);
+    setActiveScenarioKey('');
   };
 
-  // Development scenario selector - strictly for UI verification, never saved to history
+  /**
+   * History Clear Handler:
+   * Enforces confirmation dialog and wipes LocalStorage.
+   */
+  const handleClearHistory = () => {
+    historyStorage.clearHistory();
+    setHistory([]);
+  };
+
+  /**
+   * Development scenario selector for UI inspection (Dev Mode Only).
+   * Generates a preview result that is NEVER written to LocalStorage.
+   */
   const handleSelectDevScenario = (key: string) => {
     setActiveScenarioKey(key);
     const scenario = DEV_SCENARIOS[key];
     if (!scenario || !scenario.params) {
       setActiveResult(null);
     } else {
-      const res = createPayoffResult(scenario.params);
-      setActiveResult(res);
+      const p = scenario.params;
+      const unitB = p.marketPrice - p.agreedPrice;
+      const unitS = p.agreedPrice - p.marketPrice;
+      const bPayoff = unitB * p.quantity;
+      const sPayoff = unitS * p.quantity;
+
+      setActiveResult({
+        parameters: p,
+        buyerPayoff: bPayoff,
+        sellerPayoff: sPayoff,
+        buyerOutcome: getOutcomeType(bPayoff),
+        sellerOutcome: getOutcomeType(sPayoff),
+        unitPayoffBuyer: unitB,
+        unitPayoffSeller: unitS,
+        calculatedAt: 'Demo Scenario',
+      });
+      setLoadedParams({ ...p });
     }
-  };
-
-  // History clear handler
-  const handleClearHistory = () => {
-    setHistory([]);
-  };
-
-  // Dev toggle to test history table UI rendering vs empty state
-  const handleToggleDevHistory = () => {
-    setHistory((prev) => (prev.length === 0 ? DEV_SAMPLE_HISTORY : []));
   };
 
   return (
@@ -141,7 +209,7 @@ export const CalculatorPage: React.FC = () => {
         {/* Hero Introduction Banner */}
         <section className="hero-section" aria-labelledby="hero-title">
           <div className="hero-pill">
-            <span>Financial Derivative Pricing &bull; Issue #3 Input Validation</span>
+            <span>Financial Derivative Pricing &bull; Live Settlement Engine</span>
           </div>
           <h1 id="hero-title" className="hero-title">
             Forward Contract <span className="gradient-text">Profit/Loss Calculator</span>
@@ -150,10 +218,21 @@ export const CalculatorPage: React.FC = () => {
             A dedicated financial engineering workspace to model, evaluate, and visualize payoff outcomes for long and short forward positions upon contract maturity.
           </p>
 
-          {apiHealth && (
-            <div style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: '0.75rem', color: '#10b981' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-              API Connected: {apiHealth.service} ({apiHealth.framework}) - {apiHealth.status}
+          {/* Real-time API Connection Status Badge */}
+          {isApiOnline === true && apiHealth ? (
+            <div className="api-status-badge connected">
+              <span className="api-status-dot" />
+              API Connected: {apiHealth.service} ({apiHealth.framework}) — Healthy (Port 5050)
+            </div>
+          ) : isApiOnline === false ? (
+            <div className="api-status-badge disconnected">
+              <span className="api-status-dot" />
+              API Offline: Backend not responding on {getApiBaseUrl()} (Run 'dotnet run' in backend/ForwardContract.Api)
+            </div>
+          ) : (
+            <div className="api-status-badge checking">
+              <span className="api-status-dot" />
+              Checking API Connection...
             </div>
           )}
         </section>
@@ -165,7 +244,7 @@ export const CalculatorPage: React.FC = () => {
               <div className="toolbar-label">
                 <span className="toolbar-icon" aria-hidden="true">🛠️</span>
                 <span className="toolbar-title">Dev Controls: View State Inspector</span>
-                <span className="toolbar-subtitle">Test Empty States, Profit, Loss &amp; Break-Even (Dev Mode Only)</span>
+                <span className="toolbar-subtitle">Test Empty States, Profit, Loss &amp; Break-Even (Dev Mode Only — does not affect LocalStorage)</span>
               </div>
             </div>
 
@@ -180,15 +259,6 @@ export const CalculatorPage: React.FC = () => {
                   {scenario.label}
                 </button>
               ))}
-
-              <button
-                type="button"
-                className={`scenario-btn ${history.length > 0 ? 'active' : ''}`}
-                onClick={handleToggleDevHistory}
-                title="Toggle sample history records for UI review without touching LocalStorage"
-              >
-                {history.length === 0 ? 'Preview Sample History Table' : 'Hide Sample History Table'}
-              </button>
             </div>
 
             {DEV_SCENARIOS[activeScenarioKey] && (
@@ -204,14 +274,22 @@ export const CalculatorPage: React.FC = () => {
           <CalculatorForm
             onCalculate={handleCalculate}
             onReset={handleReset}
+            isLoading={isLoading}
+            apiError={apiError}
+            loadedParams={loadedParams}
           />
-          <ResultsDashboard result={activeResult} />
+          <ResultsDashboard
+            result={activeResult}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Secondary Row: Payoff Curve Visualization */}
         <div className="section-spacer">
           <PayoffChart
             parameters={activeResult ? activeResult.parameters : null}
+            actualBuyerPayoff={activeResult ? activeResult.buyerPayoff : undefined}
+            actualSellerPayoff={activeResult ? activeResult.sellerPayoff : undefined}
           />
         </div>
 
@@ -220,7 +298,7 @@ export const CalculatorPage: React.FC = () => {
           <CalculationHistory
             history={history}
             onClearHistory={handleClearHistory}
-            onSelectHistoryItem={(item) => handleCalculate(item.parameters)}
+            onSelectHistoryItem={handleSelectHistoryItem}
           />
           <TheorySection />
         </div>
@@ -231,3 +309,4 @@ export const CalculatorPage: React.FC = () => {
     </main>
   );
 };
+

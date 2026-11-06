@@ -1,11 +1,13 @@
 using ForwardContract.Api.Models;
 using ForwardContract.Api.Services;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ForwardContract.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableCors("AllowFrontend")]
 public class ForwardController : ControllerBase
 {
     private readonly IForwardCalculationService _calculationService;
