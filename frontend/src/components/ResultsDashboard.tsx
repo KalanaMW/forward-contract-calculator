@@ -5,9 +5,10 @@ import { formatCurrency } from '../utils/formatters';
 
 export interface ResultsDashboardProps {
   result?: PayoffResult | null;
+  isLoading?: boolean;
 }
 
-export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ result }) => {
+export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ result, isLoading }) => {
   return (
     <section className="card dashboard-card" id="dashboard" aria-labelledby="dashboard-heading">
       {/* Dashboard Section Header */}
@@ -25,7 +26,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ result }) =>
           </div>
         </div>
 
-        {result ? (
+        {isLoading ? (
+          <span className="card-status-badge loading-status">
+            Calculating with API...
+          </span>
+        ) : result ? (
           <span className="card-status-badge active-status">
             Calculated: {result.calculatedAt}
           </span>
@@ -44,9 +49,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ result }) =>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
             </svg>
           </div>
-          <h3 className="empty-state-title">No Payoff Calculations Generated Yet</h3>
+          <h3 className="empty-state-title">
+            {isLoading ? 'Querying Authoritative Backend API...' : 'No Payoff Calculations Generated Yet'}
+          </h3>
           <p className="empty-state-description">
-            Specify the <strong>Agreed Forward Price (K)</strong>, <strong>Market Price at Maturity (S)</strong>, and <strong>Quantity (Q)</strong> in the contract parameters form and click <strong>Calculate Payoffs</strong> to evaluate buyer and seller outcomes.
+            {isLoading
+              ? 'Executing financial engineering payoff arithmetic on ASP.NET Core Web API...'
+              : 'Specify the Agreed Forward Price (K), Market Price at Maturity (S), and Quantity (Q) in the contract parameters form and click Calculate Payoffs to evaluate buyer and seller outcomes.'}
           </p>
 
           <div className="empty-state-features">

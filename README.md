@@ -19,9 +19,11 @@ An interactive full-stack financial engineering workspace developed for the **IS
 6. [Developer Prerequisites](#6-developer-prerequisites)
 7. [Clone & Installation](#7-clone--installation)
 8. [Running the Application](#8-running-the-application)
-9. [Local URLs & Environment Configuration](#9-local-urls--environment-configuration)
-10. [Git Branching & Pull Request Workflow](#10-git-branching--pull-request-workflow)
-11. [Troubleshooting Guide](#11-troubleshooting-guide)
+9. [Local URLs & API Contract](#9-local-urls--api-contract)
+10. [Environment Variables & Persistence](#10-environment-variables--persistence)
+11. [Git Branching & Pull Request Workflow](#11-git-branching--pull-request-workflow)
+12. [Troubleshooting Guide](#12-troubleshooting-guide)
+13. [Production Deployment Readiness & Hosting Options](#13-production-deployment-readiness--hosting-options)
 
 ---
 
@@ -145,33 +147,44 @@ forward-contract-calculator/
 │       ├── ForwardControllerTests.cs   # HTTP response & validation tests
 │       └── ForwardContract.Tests.csproj # xUnit net6.0 test project
 │
-└── frontend/                           # React 16 + TypeScript + Vite SPA
-    ├── index.html                      # HTML5 entry template
-    ├── package.json                    # react@16.13.1, vite@4.5.5, typescript@4.9.5
-    ├── tsconfig.json                   # TypeScript compiler configuration
-    ├── vite.config.ts                  # Vite + React 16 classic JSX configuration
-    └── src/
-        ├── App.tsx                     # Top-level React component
-        ├── main.tsx                    # React 16 ReactDOM.render mount
-        ├── components/                 # Reusable UI components
-        │   ├── Header.tsx              # University branding & navigation
-        │   ├── CalculatorForm.tsx      # Issue #1: Parameter form (K, S, Q)
-        │   ├── TheorySection.tsx       # Formula definitions & finance theory
-        │   ├── AcademicInfo.tsx        # University module meta card
-        │   └── Footer.tsx              # Institutional footer
-        ├── pages/                      # View compositions
-        │   └── CalculatorPage.tsx      # Main application page layout
-        ├── services/                   # Frontend API integration
-        │   └── apiService.ts           # REST client calling backend endpoints
-        └── styles/                     # CSS stylesheets
-            └── index.css               # Obsidian fintech design system tokens
+├── frontend/                           # React 16 + TypeScript + Vite SPA
+│   ├── index.html                      # HTML5 entry template
+│   ├── .env.example                    # Template for Vite environment variables
+│   ├── package.json                    # react@16.13.1, vite@4.5.5, typescript@4.9.5
+│   ├── tsconfig.json                   # TypeScript compiler configuration
+│   ├── vite.config.ts                  # Vite + React 16 classic JSX configuration
+│   └── src/
+│       ├── App.tsx                     # Top-level React component
+│       ├── main.tsx                    # React 16 ReactDOM.render mount
+│       ├── components/                 # Reusable UI components
+│       │   ├── Header.tsx              # University branding & navigation
+│       │   ├── CalculatorForm.tsx      # Parameter form (K, S, Q) with live validation
+│       │   ├── ResultsDashboard.tsx    # Payoff cards & net balance strip
+│       │   ├── PayoffCard.tsx          # Dual long/short position payoff card
+│       │   ├── PayoffChart.tsx         # Chart.js visualization with maturity highlight
+│       │   ├── CalculationHistory.tsx  # LocalStorage-backed calculation table
+│       │   ├── TheorySection.tsx       # Formula definitions & finance theory
+│       │   ├── AcademicInfo.tsx        # University module meta card
+│       │   └── Footer.tsx              # Institutional footer
+│       ├── pages/                      # View compositions
+│       │   └── CalculatorPage.tsx      # Main application page layout & state orchestrator
+│       ├── services/                   # Frontend API & persistence integration
+│       │   ├── apiService.ts           # REST client calling backend endpoints
+│       │   └── historyStorage.ts       # LocalStorage calculation history manager
+│       ├── types/                      # TypeScript definitions
+│       │   └── payoff.ts               # Contract parameters, payoff models & outcomes
+│       ├── utils/                      # Reusable utilities
+│       │   ├── formatters.ts           # LKR currency and number formatters
+│       │   └── validation.ts           # Pure financial parameter validation rules
+│       └── styles/                     # CSS stylesheets
+│           └── index.css               # Obsidian fintech design system tokens
 ```
 
 ---
 
 ## 5. Team Responsibilities & Project Roadmap
 
-Each of the 5 group members is assigned a dedicated Git feature branch and issue:
+All 5 group members have successfully completed their designated feature branches and milestone issues:
 
 | Member / Role | Git Branch | Assignment / Focus Area | Status |
 | :--- | :--- | :--- | :--- |
@@ -179,7 +192,7 @@ Each of the 5 group members is assigned a dedicated Git feature branch and issue
 | **Member 2**<br/>(UI/UX & Visualization) | `feature/ui-results-dashboard` | **Issue #2**: Results Dashboard & Interactive Visuals.<br/>• Payoff summary dashboard cards (Buyer Gain/Loss, Seller Gain/Loss).<br/>• Tabular payoff distribution scenario matrix.<br/>• Responsive visual layout for results presentation. | ✅ **Completed** |
 | **Member 3**<br/>(Development & Validation) | `feature/input-validation` | **Issue #3**: Input Handling & Validation Pipeline.<br/>• Client-side validation: non-empty, numeric format, positive range ($Q > 0, K \ge 0, S \ge 0$).<br/>• Reusable TypeScript validation utilities and real-time field error banners. | ✅ **Completed** |
 | **Member 4**<br/>(Development & Backend) | `feature/payoff-calculations` | **Issue #4**: Backend Financial Calculation Engine & Unit Tests.<br/>• `IForwardCalculationService` & `ForwardCalculationService` implementation in C#.<br/>• Buyer and seller payoff calculations: $(S - K) \times Q$ and $(K - S) \times Q$.<br/>• `ForwardController` REST endpoint: `POST /api/forward/calculate`.<br/>• Comprehensive xUnit test suite (22 unit tests) with overflow and boundary validations. | ✅ **Completed** |
-| **Member 5**<br/>(Development & Integration) | `feature/charts-testing-deployment` | **Issue #5**: Full-Stack API Integration, LocalStorage & Deployment.<br/>• Connect React frontend to backend `POST /api/forward/calculate`.<br/>• Interactive payoff line chart (Chart.js) showing live buyer and seller curves.<br/>• Browser LocalStorage history persistence and final deployment verification. | ⏳ **Planned** |
+| **Member 5**<br/>(Development & Deployment) | `feature/charts-testing-deployment` | **Issue #5**: Full-Stack API Integration, History, Testing & Deployment Readiness.<br/>• Connect React frontend to authoritative backend `POST /api/forward/calculate`.<br/>• Interactive payoff line chart (Chart.js) highlighting contract spot ($S$) & break-even ($S=K$).<br/>• Browser LocalStorage history persistence with loading, sorting, and safe clear confirmation.<br/>• Live API connectivity probe and comprehensive deployment documentation. | ✅ **Completed** |
 
 ---
 
@@ -288,7 +301,7 @@ cd ../backend && dotnet build ForwardContract.sln && dotnet test ForwardContract
 
 ---
 
-## 9. Local URLs & Environment Configuration
+## 9. Local URLs & API Contract
 
 ### Service Endpoints
 
@@ -357,13 +370,41 @@ The API validates inputs and returns meaningful 400 Bad Request responses (avoid
 
 ### Environment Configuration Notes
 - **Port 5050 Selection**: The backend is deliberately configured to run on port `5050` in `Properties/launchSettings.json`. On macOS, port `5000` is reserved by default for the OS **AirPlay Receiver**, which causes port binding conflicts.
-- **Cross-Origin Resource Sharing (CORS)**: Configured in `Program.cs` via policy `AllowFrontend` to accept incoming requests from `http://localhost:5173` and `http://localhost:3000`.
+- **Cross-Origin Resource Sharing (CORS)**: Configured in `Program.cs` via policy `AllowFrontend` to accept incoming requests from `http://localhost:5173`, `http://localhost:5174`, `http://127.0.0.1:5173`, `http://127.0.0.1:5174`, `http://localhost:3000`, and `http://127.0.0.1:3000`.
+
+---
+ 
+## 10. Environment Variables & Persistence
+
+### 1. Frontend Environment Variables
+The React frontend uses Vite environment variables to resolve the backend API base URL:
+
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `VITE_API_BASE_URL` | `http://localhost:5050` | Full HTTP origin of the ASP.NET Core Web API backend. |
+
+- For local development, `VITE_API_BASE_URL` automatically defaults to `http://localhost:5050`.
+- To customize, copy the provided `.env.example` in `frontend/`:
+  ```bash
+  cd frontend
+  cp .env.example .env
+  ```
+
+### 2. Client-Side History Persistence (LocalStorage)
+- Calculation history is persisted in browser `localStorage` under key `forward_contract_history_v1`.
+- **Zero Database Requirement**: Complies with group assignment constraints by not utilizing SQL, Entity Framework, or cloud databases.
+- **Features**:
+  - Automatically loads saved history upon application launch / refresh.
+  - Newest calculations appear first.
+  - Clicking **Load** on any historical record populates the parameters into the form and results dashboard without creating duplicate entries.
+  - **Clear History** provides a native confirmation dialog before safely wiping the client storage key.
+  - Corrupted, missing, or malformed data is safely caught without throwing runtime exceptions.
 
 ---
 
-## 10. Git Branching & Pull Request Workflow
+## 11. Git Branching & Pull Request Workflow
 
-All development must follow a clean Git feature-branching model:
+All development follows a clean Git feature-branching model:
 
 ### 1. Work on Your Designated Feature Branch
 Never commit directly to the `main` branch. Switch to your assigned branch:
@@ -382,10 +423,10 @@ git pull origin feature/<your-assigned-feature>
 ```bash
 # 1. Run local builds to verify code compiles cleanly
 cd frontend && npm run build
-cd ../backend/ForwardContract.Api && dotnet build
+cd ../backend && dotnet build ForwardContract.sln && dotnet test ForwardContract.sln
 
 # 2. Stage only your modified and relevant files
-git add frontend/src/... backend/ForwardContract.Api/...
+git add frontend/src/... backend/...
 
 # 3. Commit with semantic, descriptive messages
 git commit -m "feat(calculator): implement buyer and seller payoff calculation service"
@@ -403,7 +444,7 @@ git push origin feature/<your-assigned-feature>
 
 ---
 
-## 11. Troubleshooting Guide
+## 12. Troubleshooting Guide
 
 ### 1. `react/jsx-runtime` Missing Module Error
 - **Cause**: React `16.13.1` does not support the modern automatic JSX transform introduced in React 17.
@@ -434,6 +475,40 @@ git push origin feature/<your-assigned-feature>
 ### 5. `EBADENGINE` Warning during `npm install`
 - **Cause**: Node.js `v16.20.2` is running while certain devDependencies suggest Node 18+.
 - **Solution**: The warning is non-blocking. Vite 4.5.5 and TypeScript 4.9.5 are fully functional on Node 16. If needed, run `npm install --no-audit`.
+
+---
+
+## 13. Production Deployment Readiness & Hosting Options
+
+> [!NOTE]
+> Per assignment instructions, cloud hosting has not been provisioned yet. The architecture is fully prepared for multi-environment production deployment.
+
+### 1. Architecture Deployment Separation
+The application is structured into two completely decoupled tiers:
+- **Client Tier**: Static Single Page Application (HTML, CSS, JS bundles) produced by `npm run build`.
+- **Server Tier**: Self-contained ASP.NET Core 6 Web API executable produced by `dotnet publish`.
+
+### 2. Recommended Hosting Options
+
+| Component | Target Option | Architecture Pattern | Deployment Method |
+| :--- | :--- | :--- | :--- |
+| **Frontend (SPA)** | Vercel / Netlify / Cloudflare Pages / Azure Static Web Apps | Static Asset CDN | Push `frontend/dist` bundle; configure Single Page Application rewrite rule (`/* -> /index.html`). |
+| **Frontend (Self-Hosted)** | Nginx / Caddy / Apache | Reverse Proxy Web Server | Serve `frontend/dist` as static files; proxy `/api/*` to backend Kestrel process. |
+| **Backend API** | Azure App Service / AWS App Runner / Linux VM (systemd) | Managed Kestrel Web Service | Publish with `dotnet publish -c Release -o ./publish`; execute `dotnet ForwardContract.Api.dll`. |
+| **Full-Stack Container** | Docker / Docker Compose / Kubernetes | Containerized Microservices | Build multi-stage Dockerfiles for frontend static assets and backend `mcr.microsoft.com/dotnet/aspnet:6.0`. |
+
+### 3. Production Deployment Checklist
+1. **Set Production API URL**:
+   - Provide `VITE_API_BASE_URL=https://api.yourdomain.com` during the `npm run build` process so the client bundle calls the live backend API.
+2. **Update CORS Whitelist**:
+   - In `backend/ForwardContract.Api/Program.cs` or `appsettings.Production.json`, update `WithOrigins` to include your production frontend domain (e.g. `https://calculator.yourdomain.com`).
+3. **Configure Reverse Proxy / HTTPS**:
+   - Terminate SSL/TLS with Let's Encrypt or Cloudflare certificates.
+   - Forward HTTP headers (`X-Forwarded-For`, `X-Forwarded-Proto`) to ASP.NET Core Kestrel.
+4. **Environment Variables**:
+   - Set `ASPNETCORE_ENVIRONMENT=Production` on the backend host.
+5. **Client Persistence**:
+   - Browser `localStorage` requires no server-side configuration, database connection strings, or migration scripts.
 
 ---
 

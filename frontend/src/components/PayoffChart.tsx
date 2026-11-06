@@ -6,11 +6,15 @@ import { formatCurrency, formatNumber } from '../utils/formatters';
 export interface PayoffChartProps {
   parameters?: ContractParameters | null;
   dataPoints?: ChartDataPoint[];
+  actualBuyerPayoff?: number;
+  actualSellerPayoff?: number;
 }
 
 export const PayoffChart: React.FC<PayoffChartProps> = ({
   parameters,
   dataPoints,
+  actualBuyerPayoff,
+  actualSellerPayoff,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
@@ -46,17 +50,38 @@ export const PayoffChart: React.FC<PayoffChartProps> = ({
       if (!spotValues.includes(parameters.marketPrice)) spotValues.push(parameters.marketPrice);
       spotValues.sort((a, b) => a - b);
 
-      points = spotValues.map((spot) => ({
-        spotPrice: spot,
-        buyerPayoff: (spot - K) * Q,
-        sellerPayoff: (K - spot) * Q,
-      }));
+      points = spotValues.map((spot) => {
+        const isActualSpot = Math.abs(spot - parameters.marketPrice) < 0.0001;
+        const buyer = isActualSpot && actualBuyerPayoff !== undefined
+          ? actualBuyerPayoff
+          : (spot - K) * Q;
+        const seller = isActualSpot && actualSellerPayoff !== undefined
+          ? actualSellerPayoff
+          : (K - spot) * Q;
+
+        return {
+          spotPrice: spot,
+          buyerPayoff: buyer,
+          sellerPayoff: seller,
+        };
+      });
     }
 
     const labels = points.map((p) => `${formatNumber(p.spotPrice, 0)} LKR`);
     const buyerData = points.map((p) => p.buyerPayoff);
     const sellerData = points.map((p) => p.sellerPayoff);
     const zeroLineData = points.map(() => 0);
+
+    const isActualMaturity = (spot: number) => Math.abs(spot - parameters.marketPrice) < 0.0001;
+    const isBreakEven = (spot: number) => Math.abs(spot - parameters.agreedPrice) < 0.0001;
+
+    const buyerPointRadii = points.map(p => isActualMaturity(p.spotPrice) ? 7 : (isBreakEven(p.spotPrice) ? 5 : 3.5));
+    const buyerPointHoverRadii = points.map(p => isActualMaturity(p.spotPrice) ? 9 : 6);
+    const buyerPointBorderWidths = points.map(p => isActualMaturity(p.spotPrice) ? 3 : 1.5);
+
+    const sellerPointRadii = points.map(p => isActualMaturity(p.spotPrice) ? 7 : (isBreakEven(p.spotPrice) ? 5 : 3.5));
+    const sellerPointHoverRadii = points.map(p => isActualMaturity(p.spotPrice) ? 9 : 6);
+    const sellerPointBorderWidths = points.map(p => isActualMaturity(p.spotPrice) ? 3 : 1.5);
 
     // Destroy existing instance before recreation
     if (chartInstanceRef.current) {
@@ -77,11 +102,11 @@ export const PayoffChart: React.FC<PayoffChartProps> = ({
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             borderWidth: 2.5,
-            pointBackgroundColor: '#10b981',
+            pointBackgroundColor: points.map(p => isActualMaturity(p.spotPrice) ? '#38bdf8' : '#10b981'),
             pointBorderColor: '#0a0e17',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 7,
+            pointBorderWidth: buyerPointBorderWidths,
+            pointRadius: buyerPointRadii,
+            pointHoverRadius: buyerPointHoverRadii,
             tension: 0,
             fill: false,
           },
@@ -91,11 +116,11 @@ export const PayoffChart: React.FC<PayoffChartProps> = ({
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.1)',
             borderWidth: 2.5,
-            pointBackgroundColor: '#f59e0b',
+            pointBackgroundColor: points.map(p => isActualMaturity(p.spotPrice) ? '#38bdf8' : '#f59e0b'),
             pointBorderColor: '#0a0e17',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 7,
+            pointBorderWidth: sellerPointBorderWidths,
+            pointRadius: sellerPointRadii,
+            pointHoverRadius: sellerPointHoverRadii,
             tension: 0,
             fill: false,
           },
@@ -150,11 +175,27 @@ export const PayoffChart: React.FC<PayoffChartProps> = ({
               size: 12,
             },
             callbacks: {
-              title: (context) => `Maturity Spot Price: ${context[0].label}`,
+              title: (context) => {
+                const index = context[0]?.dataIndex;
+                const p = points[index];
+                if (!p) return `Maturity Spot Price: ${context[0]?.label}`;
+                const isActual = isActualMaturity(p.spotPrice);
+                const isBe = isBreakEven(p.spotPrice);
+                if (isActual && isBe) {
+                  return `Spot Price: ${context[0]?.label} ★ (Actual Maturity & Break-Even S = K)`;
+                }
+                if (isActual) {
+                  return `Spot Price: ${context[0]?.label} ★ (Actual Contract Maturity Spot S)`;
+                }
+                if (isBe) {
+                  return `Spot Price: ${context[0]?.label} (Break-Even Price S = K)`;
+                }
+                return `Maturity Spot Price: ${context[0]?.label}`;
+              },
               label: (context) => {
                 const label = context.dataset.label || '';
                 const val = Number(context.parsed.y);
-                if (label.includes('Baseline')) return 'Zero P/L Threshold';
+                if (label.includes('Baseline')) return ' Zero P/L Threshold';
                 return ` ${label}: ${formatCurrency(val, 'LKR', true)}`;
               },
             },
@@ -282,6 +323,10 @@ export const PayoffChart: React.FC<PayoffChartProps> = ({
           <div className="note-item">
             <span className="dot grey" />
             <span>Zero-Sum intersection at <strong>S = K ({formatCurrency(parameters.agreedPrice)})</strong></span>
+          </div>
+          <div className="note-item">
+            <span className="dot blue" style={{ backgroundColor: '#38bdf8' }} />
+            <span>Contract Spot: <strong>S = {formatCurrency(parameters.marketPrice)}</strong> (Highlighted Curve Point)</span>
           </div>
         </div>
       )}
