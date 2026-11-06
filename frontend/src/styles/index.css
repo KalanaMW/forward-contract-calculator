@@ -1020,3 +1020,815 @@ a {
     gap: var(--space-2);
   }
 }
+
+/* ==========================================================================
+   ISSUE #2: RESULTS DASHBOARD, CHARTS & CALCULATION HISTORY
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   14. Layout Spacers & Scenario Toolbar
+   -------------------------------------------------------------------------- */
+.section-spacer {
+  margin-top: var(--space-8);
+}
+
+.scenario-toolbar-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-8);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-header {
+  margin-bottom: var(--space-3);
+}
+
+.toolbar-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.toolbar-icon {
+  font-size: 1.1rem;
+}
+
+.toolbar-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.toolbar-subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-left: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border);
+}
+
+.scenario-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.scenario-btn {
+  font-family: var(--font-family-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-input);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.scenario-btn:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  color: var(--color-text-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.scenario-btn.active {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+}
+
+.scenario-desc-note {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-3);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   15. Payoff Results Dashboard & Empty States
+   -------------------------------------------------------------------------- */
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-status-badge.active-status {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.card-status-badge.empty-status {
+  color: var(--color-text-muted);
+  background-color: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* Empty State Container */
+.dashboard-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  background-color: rgba(15, 23, 42, 0.4);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  margin: var(--space-2) 0;
+}
+
+.empty-state-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-light);
+  margin-bottom: var(--space-4);
+}
+
+.empty-state-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 460px;
+  line-height: 1.6;
+  margin-bottom: var(--space-6);
+}
+
+.empty-state-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 380px;
+}
+
+.feature-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background-color: rgba(11, 17, 32, 0.6);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-dot.green {
+  background-color: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success);
+}
+
+.pill-dot.amber {
+  background-color: var(--color-accent-seller);
+  box-shadow: 0 0 8px var(--color-accent-seller);
+}
+
+.pill-dot.blue {
+  background-color: var(--color-primary-light);
+  box-shadow: 0 0 8px var(--color-primary-light);
+}
+
+/* --------------------------------------------------------------------------
+   16. Results Quick Metrics Strip
+   -------------------------------------------------------------------------- */
+.dashboard-results-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.quick-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.metric-box.highlight {
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.metric-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.metric-value {
+  font-family: var(--font-family-mono);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.metric-value.zero-sum {
+  color: var(--color-info);
+}
+
+/* Dual Payoff Cards Grid */
+.payoff-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+/* --------------------------------------------------------------------------
+   17. Payoff Result Card (Buyer & Seller)
+   -------------------------------------------------------------------------- */
+.payoff-result-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  border: 1.5px solid transparent;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Outcome Themes: Profit (Green), Loss (Red), Break-Even (Neutral) */
+.payoff-result-card.outcome-profit {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.03) 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+.payoff-result-card.outcome-profit:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.25);
+}
+
+.payoff-result-card.outcome-loss {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0.03) 100%);
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.15);
+}
+
+.payoff-result-card.outcome-loss:hover {
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 6px 24px rgba(244, 63, 94, 0.25);
+}
+
+.payoff-result-card.outcome-breakeven {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.02) 100%);
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Card Header */
+.payoff-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.payoff-role-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.role-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-buyer .role-icon {
+  color: var(--color-success);
+}
+
+.role-seller .role-icon {
+  color: var(--color-accent-seller);
+}
+
+.role-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Outcome Pill */
+.outcome-pill {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+.pill-profit {
+  background-color: var(--color-success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--color-success);
+}
+
+.pill-loss {
+  background-color: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+.pill-breakeven {
+  background-color: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: var(--color-text-secondary);
+}
+
+/* Payoff Value Section */
+.payoff-value-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: var(--space-5);
+}
+
+.payoff-caption {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.payoff-amount {
+  font-family: var(--font-family-mono);
+  font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: var(--space-2);
+}
+
+.amount-profit {
+  color: #10b981;
+  text-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
+}
+
+.amount-loss {
+  color: #f43f5e;
+  text-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
+}
+
+.amount-breakeven {
+  color: #cbd5e1;
+}
+
+.payoff-unit-rate {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.unit-rate-profit {
+  color: var(--color-success);
+  font-family: var(--font-family-mono);
+}
+
+.unit-rate-loss {
+  color: #fb7185;
+  font-family: var(--font-family-mono);
+}
+
+.unit-rate-breakeven {
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+}
+
+/* Payoff Parameters Breakdown */
+.payoff-params-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: rgba(11, 17, 32, 0.7);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.param-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cell-label {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.cell-value {
+  font-family: var(--font-family-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Formula Footer */
+.payoff-formula-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+  font-size: 0.75rem;
+}
+
+.formula-tag {
+  color: var(--color-text-muted);
+}
+
+.formula-eval {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background-color: rgba(15, 23, 42, 0.8);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   18. Payoff Chart Styling
+   -------------------------------------------------------------------------- */
+.chart-card {
+  width: 100%;
+}
+
+.breakeven-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background-color: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.be-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary-light);
+  box-shadow: 0 0 8px var(--color-primary);
+}
+
+.chart-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  margin: var(--space-4) 0;
+}
+
+/* Empty Chart Preview */
+.chart-empty-state {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  border-radius: var(--radius-lg);
+  background-color: rgba(11, 17, 32, 0.6);
+  border: 1.5px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: var(--space-4) 0;
+}
+
+.empty-chart-grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.15;
+}
+
+.mock-line {
+  position: absolute;
+  width: 80%;
+  height: 3px;
+}
+
+.mock-buyer {
+  background-color: var(--color-success);
+  transform: rotate(-25deg);
+}
+
+.mock-seller {
+  background-color: var(--color-accent-seller);
+  transform: rotate(25deg);
+}
+
+.mock-zero-line {
+  position: absolute;
+  width: 90%;
+  height: 2px;
+  border-top: 2px dashed #94a3b8;
+}
+
+.empty-state-overlay {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 480px;
+  padding: var(--space-6);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.chart-footer-notes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.note-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot.green {
+  background-color: var(--color-success);
+}
+
+.dot.amber {
+  background-color: var(--color-accent-seller);
+}
+
+.dot.grey {
+  background-color: #94a3b8;
+}
+
+/* --------------------------------------------------------------------------
+   19. Calculation History Styling
+   -------------------------------------------------------------------------- */
+.history-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.history-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary-light);
+  background-color: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+.btn-clear-history {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fb7185;
+  background-color: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-clear-history:hover {
+  background-color: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #ffffff;
+}
+
+.btn-clear-history svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* History Empty State */
+.history-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  background-color: rgba(15, 23, 42, 0.4);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  margin: var(--space-2) 0;
+}
+
+/* History Table */
+.history-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background-color: rgba(11, 17, 32, 0.6);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.history-table th {
+  padding: var(--space-3) var(--space-4);
+  background-color: rgba(15, 23, 42, 0.95);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.history-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.history-row:hover td {
+  background-color: rgba(59, 130, 246, 0.04);
+}
+
+.cell-timestamp {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.cell-mono {
+  font-family: var(--font-family-mono);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.history-pill {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.history-pill.pill-profit {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.history-pill.pill-loss {
+  background-color: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+}
+
+.history-pill.pill-breakeven {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: var(--color-text-secondary);
+}
+
+.btn-table-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--color-primary-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-table-action:hover {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   20. Responsive Overrides for Issue #2
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .payoff-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-metrics-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-canvas-wrapper {
+    height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .quick-metrics-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .scenario-buttons-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scenario-btn {
+    text-align: center;
+  }
+
+  .chart-canvas-wrapper {
+    height: 280px;
+  }
+
+  .chart-footer-notes {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .history-header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+

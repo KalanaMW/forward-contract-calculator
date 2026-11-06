@@ -12,7 +12,12 @@ const DEFAULT_STATE: ContractFormState = {
   quantity: '100',
 };
 
-export const CalculatorForm: React.FC = () => {
+export interface CalculatorFormProps {
+  onCalculate?: (params: { agreedPrice: number; marketPrice: number; quantity: number }) => void;
+  onReset?: () => void;
+}
+
+export const CalculatorForm: React.FC<CalculatorFormProps> = ({ onCalculate, onReset }) => {
   const [formData, setFormData] = useState<ContractFormState>(DEFAULT_STATE);
   const [submittedNotice, setSubmittedNotice] = useState<boolean>(false);
 
@@ -27,14 +32,23 @@ export const CalculatorForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Issue #1: Input form design only. Financial calculations belong to subsequent issues.
     setSubmittedNotice(true);
+    if (onCalculate) {
+      onCalculate({
+        agreedPrice: parseFloat(formData.agreedPrice) || 0,
+        marketPrice: parseFloat(formData.marketPrice) || 0,
+        quantity: parseFloat(formData.quantity) || 0,
+      });
+    }
   };
 
   const handleReset = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormData(DEFAULT_STATE);
     setSubmittedNotice(false);
+    if (onReset) {
+      onReset();
+    }
   };
 
   return (
