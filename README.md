@@ -1,45 +1,370 @@
 # Forward Contract Profit/Loss Calculator
 
-An interactive web application developed for the IS4350 Finance Engineering group assignment at the University of Moratuwa.
+[![IS4350 Financial Engineering](https://img.shields.io/badge/Course-IS4350%20Financial%20Engineering-blue.svg)](https://uom.lk)
+[![Institution](https://img.shields.io/badge/Institution-University%20of%20Moratuwa-red.svg)](https://uom.lk)
+[![React](https://img.shields.io/badge/Frontend-React%2016.13.1-61dafb.svg)](https://reactjs.org)
+[![ASP.NET Core](https://img.shields.io/badge/Backend-ASP.NET%20Core%206.0-512bd4.svg)](https://dotnet.microsoft.com)
+[![Architecture](https://img.shields.io/badge/Architecture-Layered%20(N--Tier)-success.svg)](#3-layered-architecture-n-tier)
 
-## Overview
-This application demonstrates how forward contracts work by calculating and visualizing the profits and losses of buyers and sellers.
+An interactive full-stack financial engineering workspace developed for the **IS4350 Financial Engineering** group assignment at the **University of Moratuwa**. The application models, calculates, and visualizes buyer (long) and seller (short) payoff distributions for forward contracts at maturity under varying market spot conditions.
 
-## Features
-- Forward contract input form
-- Input validation
-- Buyer and seller payoff calculations
-- Interactive payoff charts
-- Responsive results dashboard
+---
 
-## Calculations
-- Buyer Payoff = (S - K) × Q
-- Seller Payoff = (K - S) × Q
+## Table of Contents
+1. [Project Overview](#1-project-overview)
+2. [Technology Stack & Versions](#2-technology-stack--versions)
+3. [Layered Architecture (N-Tier)](#3-layered-architecture-n-tier)
+4. [Project Directory Structure](#4-project-directory-structure)
+5. [Team Responsibilities & Project Roadmap](#5-team-responsibilities--project-roadmap)
+6. [Developer Prerequisites](#6-developer-prerequisites)
+7. [Clone & Installation](#7-clone--installation)
+8. [Running the Application](#8-running-the-application)
+9. [Local URLs & Environment Configuration](#9-local-urls--environment-configuration)
+10. [Git Branching & Pull Request Workflow](#10-git-branching--pull-request-workflow)
+11. [Troubleshooting Guide](#11-troubleshooting-guide)
 
-Where:
-- S = Market price at maturity
-- K = Agreed forward price
-- Q = Contract quantity
+---
 
-## Technologies
-- HTML5
-- CSS3
-- JavaScript
-- Chart.js
+## 1. Project Overview
 
-## Team Responsibilities
-1. UI/UX - Calculator Input Form
-2. UI/UX - Results Dashboard and Charts
-3. Development - Input Handling and Validation
-4. Development - Forward Contract Payoff Calculations
-5. Development - Chart Integration, Testing and Deployment
+A **Forward Contract** is a customized bilateral financial derivative where counterparties lock in a transaction for an underlying asset at an agreed forward price ($K$) on a specified future expiration date ($T$). No initial cash outlay or premium is paid at inception ($t = 0$), and the contract represents a zero-sum payoff structure between buyer and seller.
+
+### Core Mathematical Payoff Model
+- **Agreed Forward Price ($K$)**: Delivery price agreed at contract inception.
+- **Market Price at Maturity ($S$)**: Spot market price of the asset at expiration date.
+- **Contract Quantity ($Q$)**: Total volume of units transacted.
+
+$$\text{Payoff}_{\text{Buyer (Long)}} = (S - K) \times Q$$
+
+$$\text{Payoff}_{\text{Seller (Short)}} = (K - S) \times Q$$
+
+$$\text{Net System Payoff} = \text{Payoff}_{\text{Buyer}} + \text{Payoff}_{\text{Seller}} = 0$$
+
+---
+
+## 2. Technology Stack & Versions
+
+The project follows a **Layered Full-Stack Architecture** with strict version constraints:
+
+| Layer | Technology | Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Frontend Framework** | React & React DOM | `16.13.1` | Single-page UI application (SPA) |
+| **Language (Client)** | TypeScript | `~4.9.5` | Type-safe component development |
+| **Build Tool / Bundler** | Vite | `^4.5.5` | Fast local dev server & production bundler |
+| **Vite React Plugin** | `@vitejs/plugin-react` | `^4.2.1` | Configured with classic JSX runtime (`jsxRuntime: 'classic'`) |
+| **Client Styling** | Vanilla CSS3 | Standard | Custom tokenized Obsidian Fintech theme; no heavy CSS frameworks |
+| **Backend Runtime** | .NET / ASP.NET Core | `6.0` (`net6.0`) | High-performance RESTful Web API |
+| **Backend Language** | C# | `10.0` | Controller and service implementations |
+| **API Protocol** | REST / JSON | HTTP/1.1 | Standard JSON serialization between client and server |
+| **Persistence / Storage** | Browser `localStorage` | HTML5 Web API | Client-side calculation history storage (No SQL database) |
+
+> [!NOTE]
+> **No Database Dependency**: As specified by academic requirements, this project does not use SQL databases, Entity Framework, Redis, or server-side authentication. Calculation histories are persisted exclusively within the user's browser `localStorage`.
+
+---
+
+## 3. Layered Architecture (N-Tier)
+
+This system is deliberately structured according to a **Layered Architecture (N-Tier)** pattern consisting of distinct, loosely coupled layers with unidirectional top-down dependencies:
+
+```mermaid
+flowchart TD
+    subgraph Presentation_Tier ["Tier 1: Presentation Layer (Client)"]
+        UI["React 16.13.1 Single Page Application<br/>(Components: Form, Charts, Dashboard, Theory)"]
+        Storage["Browser LocalStorage Manager<br/>(Persists Calculation History Locally)"]
+        ApiClient["Frontend API Client (apiService.ts)<br/>(HTTP / Fetch REST Requests)"]
+        UI --> Storage
+        UI --> ApiClient
+    end
+
+    subgraph API_Tier ["Tier 2: API & Controller Layer (Backend Host)"]
+        direction TB
+        Host["ASP.NET Core 6 Web API Host<br/>(Program.cs, Kestrel, CORS Policy)"]
+        Controllers["API Controllers<br/>(HealthController, PayoffController)"]
+        DTOs["Data Transfer Objects (DTOs)<br/>(ContractParametersDto, PayoffResponseDto)"]
+        Host --> Controllers
+        Controllers --> DTOs
+    end
+
+    subgraph Business_Tier ["Tier 3: Business Logic Layer (Backend Services)"]
+        direction TB
+        PayoffService["Payoff Calculation Service<br/>(Buyer / Seller Payoff Formulas)"]
+        ValidationService["Contract Validation Service<br/>(Domain boundary and non-negativity checks)"]
+        Controllers --> PayoffService
+        Controllers --> ValidationService
+    end
+
+    ApiClient -- "HTTP REST / JSON (Port 5050)" --> Host
+```
+
+### Layer Breakdown
+1. **Presentation Layer (Frontend / Client Tier)**:
+   - React components render the user interface, capture input parameters, handle state, and display charts.
+   - Communicates with the backend API asynchronously via `fetch` calls.
+   - Manages calculation history inside client-side `localStorage`.
+2. **API / Controller Layer (Backend / Web API Host)**:
+   - ASP.NET Core controllers (`[ApiController]`) accept JSON requests, deserialize them into DTO models, validate inputs, and return standard HTTP status codes (`200 OK`, `400 Bad Request`).
+   - CORS middleware permits secure cross-origin requests from the React dev server (`localhost:5173`).
+3. **Business Logic Layer (Domain Services)**:
+   - Encapsulates financial calculations:
+     - Long position payoff computation
+     - Short position payoff computation
+     - Summary metrics (break-even point, net profit/loss, return percentage)
+   - Performs domain-level input validation (e.g., positive quantities, valid price points).
+4. **Data Persistence (Client LocalStorage)**:
+   - Lightweight client-side persistence for recent trade entries and payoff simulations. Eliminates external database overhead.
+
+---
+
+## 4. Project Directory Structure
+
+```text
+forward-contract-calculator/
+├── .gitignore                          # macOS, Node, and .NET ignore rules
+├── README.md                           # Project & onboarding documentation
+│
+├── backend/                            # ASP.NET Core Web API Project
+│   └── ForwardContract.Api/
+│       ├── Controllers/                # API Controllers
+│       │   └── HealthController.cs     # GET /api/health endpoint
+│       ├── Models/                     # Request/Response DTO models
+│       ├── Services/                   # Financial engineering domain services
+│       ├── Properties/
+│       │   └── launchSettings.json     # Kestrel port configuration (5050)
+│       ├── appsettings.json            # Application configuration
+│       ├── Program.cs                  # Web API host configuration & CORS
+│       └── ForwardContract.Api.csproj  # Target framework: net6.0
+│
+└── frontend/                           # React 16 + TypeScript + Vite SPA
+    ├── index.html                      # HTML5 entry template
+    ├── package.json                    # react@16.13.1, vite@4.5.5, typescript@4.9.5
+    ├── tsconfig.json                   # TypeScript compiler configuration
+    ├── vite.config.ts                  # Vite + React 16 classic JSX configuration
+    └── src/
+        ├── App.tsx                     # Top-level React component
+        ├── main.tsx                    # React 16 ReactDOM.render mount
+        ├── components/                 # Reusable UI components
+        │   ├── Header.tsx              # University branding & navigation
+        │   ├── CalculatorForm.tsx      # Issue #1: Parameter form (K, S, Q)
+        │   ├── TheorySection.tsx       # Formula definitions & finance theory
+        │   ├── AcademicInfo.tsx        # University module meta card
+        │   └── Footer.tsx              # Institutional footer
+        ├── pages/                      # View compositions
+        │   └── CalculatorPage.tsx      # Main application page layout
+        ├── services/                   # Frontend API integration
+        │   └── apiService.ts           # REST client calling backend endpoints
+        └── styles/                     # CSS stylesheets
+            └── index.css               # Obsidian fintech design system tokens
+```
+
+---
+
+## 5. Team Responsibilities & Project Roadmap
+
+Each of the 5 group members is assigned a dedicated Git feature branch and issue:
+
+| Member / Role | Git Branch | Assignment / Focus Area | Status |
+| :--- | :--- | :--- | :--- |
+| **Member 1**<br/>(UI/UX & Core Setup) | `feature/ui-input-form` | **Issue #1**: Full-Stack Architecture Setup & Calculator Input Form UI.<br/>• Scaffold React 16 + ASP.NET Core 6 layered architecture.<br/>• Input fields for $K$, $S$, and $Q$ with LKR denomination.<br/>• Form reset & action buttons, finance theory section. | ✅ **Completed** |
+| **Member 2**<br/>(UI/UX & Visualization) | `feature/ui-results-dashboard` | **Issue #2**: Results Dashboard & Interactive Visuals.<br/>• Payoff summary dashboard cards (Buyer Gain/Loss, Seller Gain/Loss).<br/>• Tabular payoff distribution scenario matrix.<br/>• Responsive visual layout for results presentation. | ⏳ **Planned** |
+| **Member 3**<br/>(Development & Validation) | `feature/input-validation` | **Issue #3**: Input Handling & Validation Pipeline.<br/>• Client-side validation: non-empty, numeric format, positive range ($Q > 0, K \ge 0, S \ge 0$).<br/>• Server-side ASP.NET Core validation attributes and error handling.<br/>• Accessible error feedback banners in UI. | ⏳ **Planned** |
+| **Member 4**<br/>(Development & Backend) | `feature/payoff-calculations` | **Issue #4**: Backend Financial Calculation Engine.<br/>• `IPayoffCalculationService` implementation in C#.<br/>• Buyer and seller payoff calculations: $(S - K) \times Q$ and $(K - S) \times Q$.<br/>• `PayoffController` REST endpoint: `POST /api/payoffs/calculate`.<br/>• Client `localStorage` integration for calculation history. | ⏳ **Planned** |
+| **Member 5**<br/>(Development & Deployment) | `feature/charts-testing-deployment` | **Issue #5**: Chart Integration, Testing & Deployment.<br/>• Interactive payoff line chart (Chart.js) showing buyer and seller curves.<br/>• Break-even point visualization.<br/>• Integration and unit testing, final build verification and deployment. | ⏳ **Planned** |
+
+---
+
+## 6. Developer Prerequisites
+
+Before setting up the project locally, verify that your machine has the following tools installed:
+
+1. **Node.js & npm**:
+   - Node.js `v16.20.2` or later (tested and compatible with `v16.x`)
+   - npm `v8.19.4` or later
+   - Check with: `node --version && npm --version`
+2. **.NET SDK**:
+   - .NET 6 SDK (`6.0.428` or later) or .NET 10 SDK with the `net6.0` targeting pack and ASP.NET Core 6 runtime.
+   - Check with: `dotnet --list-sdks && dotnet --list-runtimes`
+3. **Git**:
+   - Git 2.30+ installed and configured.
+   - Check with: `git --version`
+
+---
+
+## 7. Clone & Installation
+
+### Step 1: Clone the Repository
+```bash
+# Clone the repository
+git clone https://github.com/KalanaMW/forward-contract-calculator.git
+
+# Navigate into the project root
+cd forward-contract-calculator
+```
+
+### Step 2: Install Frontend Dependencies
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Install exact React 16.13.1 and tooling dependencies
+npm install
+
+# Return to root
+cd ..
+```
+
+### Step 3: Restore Backend Dependencies
+```bash
+# Navigate to the backend project directory
+cd backend/ForwardContract.Api
+
+# Restore .NET packages
+dotnet restore
+
+# Return to root
+cd ../..
+```
+
+---
+
+## 8. Running the Application
+
+Open two separate terminal windows or tabs to run the backend and frontend concurrently:
+
+### Terminal 1: Start the ASP.NET Core Web API (Backend)
+```bash
+cd backend/ForwardContract.Api
+dotnet run
+```
+- **Terminal Output Confirmation**:
+  ```text
+  info: Microsoft.Hosting.Lifetime[14]
+        Now listening on: http://localhost:5050
+  info: Microsoft.Hosting.Lifetime[0]
+        Application started. Press Ctrl+C to shut down.
+  ```
+
+### Terminal 2: Start the Vite Dev Server (Frontend)
+```bash
+cd frontend
+npm run dev
+```
+- **Terminal Output Confirmation**:
+  ```text
+  VITE v4.5.5  ready in 95 ms
+
+  ➜  Local:   http://127.0.0.1:5173/
+  ```
+
+### Production Build Validation
+To verify that both projects compile without warnings or errors before pushing code:
+```bash
+# Validate frontend TypeScript compilation & bundling
+cd frontend && npm run build
+
+# Validate backend C# compilation
+cd ../backend/ForwardContract.Api && dotnet build --configuration Release
+```
+
+---
+
+## 9. Local URLs & Environment Configuration
+
+### Service Endpoints
+
+| Service | Protocol | Local URL | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend Application** | HTTP | `http://localhost:5173` | React SPA User Interface |
+| **Backend API Base** | HTTP | `http://localhost:5050` | ASP.NET Core Web API Root |
+| **Backend Health Check** | HTTP (GET) | `http://localhost:5050/api/health` | Controller Health Endpoint (JSON status) |
+| **Direct Health Probe** | HTTP (GET) | `http://localhost:5050/health` | Minimal Health Endpoint |
+
+### Environment Configuration Notes
+- **Port 5050 Selection**: The backend is deliberately configured to run on port `5050` in `Properties/launchSettings.json`. On macOS, port `5000` is reserved by default for the OS **AirPlay Receiver**, which causes port binding conflicts.
+- **Cross-Origin Resource Sharing (CORS)**: Configured in `Program.cs` via policy `AllowFrontend` to accept incoming requests from `http://localhost:5173` and `http://localhost:3000`.
+
+---
+
+## 10. Git Branching & Pull Request Workflow
+
+All development must follow a clean Git feature-branching model:
+
+### 1. Work on Your Designated Feature Branch
+Never commit directly to the `main` branch. Switch to your assigned branch:
+```bash
+# View available branches
+git branch -a
+
+# Checkout your assigned feature branch
+git checkout feature/<your-assigned-feature>
+
+# Ensure you have the latest changes from remote
+git pull origin feature/<your-assigned-feature>
+```
+
+### 2. Implement, Verify, and Commit Changes
+```bash
+# 1. Run local builds to verify code compiles cleanly
+cd frontend && npm run build
+cd ../backend/ForwardContract.Api && dotnet build
+
+# 2. Stage only your modified and relevant files
+git add frontend/src/... backend/ForwardContract.Api/...
+
+# 3. Commit with semantic, descriptive messages
+git commit -m "feat(calculator): implement buyer and seller payoff calculation service"
+```
+
+### 3. Push and Open a Pull Request (PR)
+```bash
+# Push your feature branch to GitHub
+git push origin feature/<your-assigned-feature>
+```
+1. Go to the [GitHub Repository](https://github.com/KalanaMW/forward-contract-calculator).
+2. Open a **Pull Request** comparing your branch `feature/<your-feature>` into `main`.
+3. Request review from at least one other team member.
+4. Merge only after successful build and review approvals.
+
+---
+
+## 11. Troubleshooting Guide
+
+### 1. `react/jsx-runtime` Missing Module Error
+- **Cause**: React `16.13.1` does not support the modern automatic JSX transform introduced in React 17.
+- **Solution**: Both `vite.config.ts` and `tsconfig.json` have been configured for the classic runtime:
+  - In `vite.config.ts`: `react({ jsxRuntime: 'classic' })` with `resolve.alias` mapping `react/jsx-runtime` to `react`.
+  - In `tsconfig.json`: `"jsx": "react"`.
+  - Ensure every `.tsx` file imports React: `import React from 'react';`.
+
+### 2. Warning `NETSDK1138: The target framework 'net6.0' is out of support`
+- **Cause**: .NET 6 has reached Microsoft End-of-Life (EOL), and the installed .NET 10 SDK prints a warning during build.
+- **Solution**: This warning is harmless and expected under the project's academic framework constraints. The build still succeeds (`0 Error(s)`). Do not upgrade the TargetFramework to net7.0, net8.0, or net10.0 without team authorization.
+
+### 3. Port Conflict `Address already in use` on Port 5050
+- **Cause**: A previous instance of `dotnet run` is still executing in the background.
+- **Solution**:
+  ```bash
+  # Identify the process listening on port 5050 (macOS/Linux)
+  lsof -i :5050
+
+  # Terminate the process (replace <PID> with the process ID)
+  kill -9 <PID>
+  ```
+
+### 4. CORS Error: `Access to fetch has been blocked by CORS policy`
+- **Cause**: The frontend is running on a port not listed in the backend CORS whitelist.
+- **Solution**: Verify the frontend is running on `http://localhost:5173`. Check `backend/ForwardContract.Api/Program.cs` under `WithOrigins` to ensure your active client origin is included.
+
+### 5. `EBADENGINE` Warning during `npm install`
+- **Cause**: Node.js `v16.20.2` is running while certain devDependencies suggest Node 18+.
+- **Solution**: The warning is non-blocking. Vite 4.5.5 and TypeScript 4.9.5 are fully functional on Node 16. If needed, run `npm install --no-audit`.
+
+---
 
 ## Academic Information
-Module: IS4350 Finance Engineering
 
-Institution: University of Moratuwa
-
-Project Type: Group Assignment (5 Members)
-
-## Project Status
-Under Development
+- **Course Module**: IS4350 Financial Engineering
+- **Department**: Department of Industrial Management
+- **Institution**: University of Moratuwa, Sri Lanka
+- **Project Structure**: 5-Member Team Assignment
+- **Academic Year**: 2026

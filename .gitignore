@@ -1,1 +1,35 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+
+# .NET / Backend
+bin/
+obj/
+out/
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
