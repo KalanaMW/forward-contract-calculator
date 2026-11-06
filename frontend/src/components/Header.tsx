@@ -20,9 +20,11 @@ export const Header: React.FC = () => {
 
         {/* Main Navigation */}
         <nav className="app-nav" aria-label="Main Navigation">
-          <a href="#calculator" className="nav-link active">Calculator</a>
-          <a href="#theory" className="nav-link">Contract Theory</a>
-          <a href="#formulas" className="nav-link">Payoff Formulas</a>
+          <a href="#calculator" className="nav-link">Parameters</a>
+          <a href="#dashboard" className="nav-link active">Dashboard</a>
+          <a href="#chart" className="nav-link">Payoff Chart</a>
+          <a href="#history" className="nav-link">History</a>
+          <a href="#theory" className="nav-link">Theory</a>
           <a href="#academic" className="nav-link">Project Info</a>
         </nav>
 
